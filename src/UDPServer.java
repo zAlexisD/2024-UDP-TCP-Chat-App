@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 public class UDPServer {
     private int listeningPort;
     private String serverState;
+    private final int defaultPort = 0;
+    private final int maxBufSize = 1024;
 
     public UDPServer(int listeningPort) {
         this.listeningPort = listeningPort;
@@ -14,7 +16,6 @@ public class UDPServer {
     }
 
     public UDPServer() {
-        int defaultPort = 0;
         this.listeningPort = defaultPort;
         this.serverState = "Closed";
     }
@@ -25,7 +26,6 @@ public class UDPServer {
 
     public void launch() throws IOException {
         DatagramSocket socket = null;
-        int maxBufSize = 1024;
 
         try {
             this.serverState = "Running";
@@ -44,6 +44,10 @@ public class UDPServer {
 
                 System.out.println("User in " + clientAddress + " says on port " + clientPort + ": " + receivedData + "\n");
 
+                // Add condition to tell when the user disconnects
+                if(receivedData.trim().equalsIgnoreCase(("exit console"))){
+                    System.out.println("User at "+ clientAddress + " left the chat");
+                }
                 // Add condition to close the UDP server
                 if (receivedData.trim().equalsIgnoreCase("close server")){
                     System.out.println("Server closing...\n");
