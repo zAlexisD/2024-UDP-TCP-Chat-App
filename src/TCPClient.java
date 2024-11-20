@@ -1,12 +1,13 @@
 import java.io.Console;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 public class TCPClient {
     private String serverHost;
     private int serverPort;
+    private final int maxBufSize = 1024;
 
     public TCPClient(String serverHost, int serverPort) {
         this.serverHost = serverHost;
@@ -23,14 +24,32 @@ public class TCPClient {
             System.exit(1);
         }
 
-        while(true){
-            String userInput = console.readLine("Enter a message or '?' for help : "); // retrieve the user's message
-            byte[] data = userInput.getBytes(StandardCharsets.UTF_8);   // encodes strings in UTF-S8
+        // Buffer for echo
+        byte[] buf = new byte[maxBufSize];
 
-            // Send data to the server
+        while(true){
+            // retrieve the user's message
+            String userInput = console.readLine("Enter a message or '?' for help : ");
+
+            // CTRL+D corresponds to en end-of-input (EOF), console.readLine() returns null
+            if (userInput==null){
+                System.out.println("\nClosing console...\n");
+                break;
+            }
+
+            // encodes strings in UTF-8
+            byte[] data = userInput.getBytes(StandardCharsets.UTF_8);
+
+            // send data to the server
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(data);
             outputStream.flush();
+
+            // receive echo from the server
+            InputStream inputStream = socket.getInputStream();
+            int byteRead = inputStream.read(buf);
+            String receivedEcho = new String(buf, StandardCharsets.UTF_8);
+            System.out.println("server echo : " + receivedEcho);
 
             // Add condition to display help command
             if (userInput.trim().equalsIgnoreCase("?")){
@@ -38,14 +57,14 @@ public class TCPClient {
                 System.out.println("type 'close server' to disconnect the server\n");
             }
 
-            // Add conditions to close the console
-            // console.readLine() returns null if end-of-stream reached <=> CTRL+D
-            if (userInput == null || userInput.trim().equalsIgnoreCase("exit console")){
+            // Add another condition to close the console
+            if (userInput.trim().equalsIgnoreCase("exit console")){
                 System.out.println("Closing console...\n");
                 break;
             }
         }
         socket.close();
+        System.out.println("\nConsole closed\n");
     }
 
     public static void main(String[] args) throws Exception {

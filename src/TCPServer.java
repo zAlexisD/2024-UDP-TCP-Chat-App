@@ -11,7 +11,8 @@ import java.net.InetAddress;
 public class TCPServer {
     private int listeningPort;
     private String serverState;
-    private final int maxBufSize=1024;
+    private final int defaultPort = 0;
+    private final int maxBufSize = 1024;
 
     public TCPServer(int listeningPort) {
         this.listeningPort = listeningPort;
@@ -19,7 +20,6 @@ public class TCPServer {
     }
 
     public TCPServer() {
-        int defaultPort = 0;
         this.listeningPort = defaultPort;
         this.serverState = "Closed";
     }
@@ -30,44 +30,51 @@ public class TCPServer {
 
     public void launch() throws IOException {
         Socket clientSocket = null;
+        ServerSocket serverSocket = null;
 
         try {
-            ServerSocket serverSocket = new ServerSocket(this.listeningPort);
+            serverSocket = new ServerSocket(this.listeningPort);
             this.serverState = "Running";
             System.out.println("Server is running and listening on port " + this.listeningPort);
 
+            // Buffers for incoming data and echo
+            byte[] buf = new byte[maxBufSize];
+            String echo = "Message received";
+            byte[] echo_buf = echo.getBytes(StandardCharsets.UTF_8);
+
             while(true){
                 clientSocket = serverSocket.accept();
-                System.out.println("Connection from client :" + clientSocket.getInetAddress());
+                System.out.println("Connection from client : " + clientSocket.getInetAddress());
 
-                InputStream input = clientSocket.getInputStream();                // InputStream to read the server response
-                OutputStream output = clientSocket.getOutputStream();
-
-                byte[] buf = new byte[maxBufSize];
-
-                input.read(buf);
+                // Get the Client's message
+                InputStream input = clientSocket.getInputStream();
+                int byteRead = input.read(buf);
                 String receivedData = new String(buf, StandardCharsets.UTF_8);
-                System.out.println("client say :" + receivedData);
+                System.out.println("client say : " + receivedData);
 
-                String echo = "message received";
-                byte[] echo_buf = echo.getBytes(StandardCharsets.UTF_8);
+                // Send an echo to the client
+                OutputStream output = clientSocket.getOutputStream();
                 output.write(echo_buf);
                 output.flush();
 
-                clientSocket.close();
+                // Add condition to tell when the user disconnects
+                if(receivedData.trim().equalsIgnoreCase(("exit console"))){
+                    System.out.println("User at "+ clientSocket.getInetAddress() + " left the chat");
+                    clientSocket.close();
+                }
 
-                // Add condition to close the UDP server
+                // Add condition to close the TCP server
                 if (receivedData.trim().equalsIgnoreCase("close server")){
                     System.out.println("Server closing...\n");
                     break;
                 }
-                
+
             }
         } finally {
             this.serverState = "Closed";
             System.out.println("Server closed\n");
-            if(clientSocket != null && !clientSocket.isClosed()){
-                clientSocket.close();
+            if(serverSocket != null && !serverSocket.isClosed()){
+                serverSocket.close();
             }
         }
         
@@ -76,7 +83,7 @@ public class TCPServer {
 
     @Override
     public String toString() {
-        return "UDP server status on port " + this.listeningPort + ": " + this.serverState;
+        return "TCP server status on port " + this.listeningPort + ": " + this.serverState;
     }
 
 
