@@ -28,11 +28,9 @@ public class UDPServer {
 
     // Starts the server, listens for incoming datagrams, and processes received data
     public void launch() throws IOException {
-        DatagramSocket socket = null;
 
-        try {
-            this.serverState = "Running";                           // Update server state
-            socket = new DatagramSocket(this.listeningPort);        // Bind socket to specified port
+        try (DatagramSocket datagramSocket = new DatagramSocket(this.listeningPort)){        // Bind socket to specified port
+            this.serverState = "Running";                                                   // Update server state
             System.out.println("UDPServer is running and listening on port " + this.listeningPort);
 
             // Buffer for incoming data
@@ -42,16 +40,21 @@ public class UDPServer {
             while(true){
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
                 // Wait for a datagram
-                socket.receive(packet);
+                datagramSocket.receive(packet);
 
                 InetAddress clientAddress = packet.getAddress();
                 int clientPort = packet.getPort();
+
                 // Decode received data to UTF-8 string
                 String receivedData = new String(packet.getData(),0, packet.getLength(), StandardCharsets.UTF_8);
 
                 // Display client address, port, and message content
                 System.out.println("User in " + clientAddress + " says on port " + clientPort + ": " + receivedData + "\n");
 
+                // Add condition when client asking for help
+                if(receivedData.trim().equalsIgnoreCase(("?"))){
+                    System.out.println("User at "+ clientAddress + " is looking at the help notice");
+                }
                 // Add condition to tell when the user disconnects
                 if(receivedData.trim().equalsIgnoreCase(("exit console"))){
                     System.out.println("User at "+ clientAddress + " left the chat");
@@ -62,13 +65,10 @@ public class UDPServer {
                     break;
                 }
             }
-        } finally {
-            this.serverState = "Closed";                // Update server state
-            System.out.println("Server closed\n");
-            if(socket != null && !socket.isClosed()){
-                socket.close();                         // Release socket resources when finished
-            }
         }
+        // Server closure
+        this.serverState = "Closed";                // Update server state
+        System.out.println("Server closed\n");
     }
 
     // Returns a string describing the current server status

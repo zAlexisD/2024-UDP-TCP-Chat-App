@@ -49,7 +49,7 @@ public class TCPClient {
             InputStream inputStream = socket.getInputStream();
             int byteRead = inputStream.read(buf);
             String receivedEcho = new String(buf, StandardCharsets.UTF_8);
-            System.out.println("server echo : " + receivedEcho);
+            System.out.println("\nserver echo : " + receivedEcho);
 
             // Add condition to display help command
             if (userInput.trim().equalsIgnoreCase("?")){
@@ -64,7 +64,7 @@ public class TCPClient {
             }
         }
         socket.close();
-        System.out.println("\nConsole closed\n");
+        System.out.println("Console closed\n");
     }
 
     public static void main(String[] args) throws Exception {
