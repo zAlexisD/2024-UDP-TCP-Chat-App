@@ -55,6 +55,13 @@ public class ConnectionThread extends Thread {
             }
         } catch (IOException e){
             System.err.println("Error in the client connection: "+e.getMessage());
+        } finally {
+            // Resources closure
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                System.err.println("Error closing resources: " + e.getMessage());
+            }
         }
     }
 }

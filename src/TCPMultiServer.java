@@ -43,6 +43,7 @@ public class TCPMultiServer {
 
             while(true){
                 // WIP : Manage reset timeout when a client disconnects
+                // WIP : if a first client connects, stop the countdown
                 // Close server if time out connection reached
                 if (System.currentTimeMillis() - startTime > timeout){
                     System.out.println("Timeout reached. No connection received");
@@ -50,12 +51,14 @@ public class TCPMultiServer {
                 }
 
                 // Check for incoming connections
-                try (Socket clientSocket = serverSocket.accept()) {
-                    // Once the connection is done
+                try {
+                    // Accept a client's connection
+                    Socket clientSocket = serverSocket.accept();
                     System.out.println("Connection from client : " + clientSocket.getInetAddress());
+
+                    // New "session" for the client
                     InputStream clientInput = clientSocket.getInputStream();
                     OutputStream clientOutput = clientSocket.getOutputStream();
-
                     ConnectionThread client = new ConnectionThread(clientSocket,clientInput,clientOutput);
                     client.start();
 
@@ -84,8 +87,9 @@ public class TCPMultiServer {
 
         int port = Integer.parseInt(args[0]);
 
+        // Instance of TCP multiserver
         TCPMultiServer servTCP = new TCPMultiServer(port);
         servTCP.launch();
-        System.out.println(servTCP);
+        System.exit(1);     // quit the Java VM
     }
 }
