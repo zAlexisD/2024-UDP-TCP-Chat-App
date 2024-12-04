@@ -8,6 +8,7 @@ public class TCPClient {
     private String serverHost;
     private int serverPort;
     private final int maxBufSize = 1024;
+    private final String exitConsole = "exit console";
 
     public TCPClient(String serverHost, int serverPort) {
         this.serverHost = serverHost;
@@ -33,6 +34,12 @@ public class TCPClient {
 
             // CTRL+D corresponds to en end-of-input (EOF), console.readLine() returns null
             if (userInput==null){
+                // Tell to server to do the same as with "exit console"
+                byte[] exitData = exitConsole.getBytes(StandardCharsets.UTF_8);
+                OutputStream exitOutput = socket.getOutputStream();
+                exitOutput.write(exitData);
+                exitOutput.flush();
+
                 System.out.println("\nClosing console...\n");
                 break;
             }
@@ -49,16 +56,17 @@ public class TCPClient {
             InputStream inputStream = socket.getInputStream();
             int byteRead = inputStream.read(buf);
             String receivedEcho = new String(buf, StandardCharsets.UTF_8);
-            System.out.println("\nserver echo : " + receivedEcho);
+            System.out.println("server echo : " + receivedEcho);
+            // WIP : handle when no response
 
-            // Add condition to display help command
+            // Manage help panel display
             if (userInput.trim().equalsIgnoreCase("?")){
-                System.out.println("Press CTRL+D or type 'exit console' to quit console\n" );
-                System.out.println("type 'close server' to disconnect the server\n");
+                System.out.println(">> Press CTRL+D or type 'exit console' to quit console\n" );
+                System.out.println(">> type 'close server' to disconnect the server\n");
             }
 
-            // Add another condition to close the console
-            if (userInput.trim().equalsIgnoreCase("exit console")){
+            // Manage console and server closure
+            if (userInput.trim().equalsIgnoreCase(exitConsole) || userInput.trim().equalsIgnoreCase("close server")){
                 System.out.println("Closing console...\n");
                 break;
             }

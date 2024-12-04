@@ -20,7 +20,5 @@ public class ThreadTest extends java.lang.Thread{
 
         t1.start();
         t2.start();
-
-
     }
 }

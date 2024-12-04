@@ -51,15 +51,16 @@ public class UDPServer {
                 // Display client address, port, and message content
                 System.out.println("User in " + clientAddress + " says on port " + clientPort + ": " + receivedData + "\n");
 
-                // Add condition when client asking for help
+                // WIP : manage when client connection is lost
+                // Manage help panel display
                 if(receivedData.trim().equalsIgnoreCase(("?"))){
                     System.out.println("User at "+ clientAddress + " is looking at the help notice");
                 }
-                // Add condition to tell when the user disconnects
+                // Manage Console closure
                 if(receivedData.trim().equalsIgnoreCase(("exit console"))){
                     System.out.println("User at "+ clientAddress + " left the chat");
                 }
-                // Add condition to close the UDP server
+                // Manage UDP server closure
                 if (receivedData.trim().equalsIgnoreCase("close server")){
                     System.out.println("Server closing...\n");
                     break;

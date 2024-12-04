@@ -5,8 +5,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
-import static java.lang.Thread.sleep;
-
 
 public class TCPServer {
     private int listeningPort;
@@ -15,9 +13,10 @@ public class TCPServer {
     private final int maxBufSize = 1024;
 
     // Set time variables
-    private final int timeout = 60000;  // Set connection time out at 1 min (60 000 ms)
+    private final int millisToSec = 1000;
+    private final int timeout = 60000;  // Set connection time out at 1 min (60000 ms)
+    private final int interval = 10000;  // Set remind interval at 10s (10000 ms)
     private final long startTime = System.currentTimeMillis();
-    private final int interval = 1000;  // Set check interval at 1s (1000 ms)
 
     public TCPServer(int listeningPort) {
         this.listeningPort = listeningPort;
@@ -33,19 +32,23 @@ public class TCPServer {
         return listeningPort;
     }
 
-    public void launch() throws IOException, InterruptedException {
+    public void launch() throws IOException {
 
         try(ServerSocket serverSocket = new ServerSocket(this.listeningPort)) {
             this.serverState = "Running";
             System.out.println("Server is running and listening on port " + this.listeningPort);
 
             // Set echo message
-            String echo = "Message received";
+            String echo = "Message received\n";
             byte[] echo_buf = echo.getBytes(StandardCharsets.UTF_8);
 
             // Waiting for Client connection
             System.out.println("Waiting for connection...\n");
+            // Set reminder for connection time left by unblocking .accept()
+            serverSocket.setSoTimeout(interval);
+
             while(true){
+                // WIP : Manage reset timeout when a client disconnects
                 // Close server if time out connection reached
                 if (System.currentTimeMillis() - startTime > timeout){
                     System.out.println("Timeout reached. No connection received");
@@ -60,20 +63,22 @@ public class TCPServer {
                         InputStream input = clientSocket.getInputStream();
                         OutputStream output = clientSocket.getOutputStream();
 
+                        // WIP : manage ? and not displaying when client use a command
                         // Get the Client's message
                         byte[] buf = new byte[maxBufSize];
                         int byteRead = input.read(buf);
                         String receivedData = new String(buf, StandardCharsets.UTF_8);
                         System.out.println("Client " + clientSocket.getInetAddress() + " says : " + receivedData);
 
-                        // Add condition to tell when the user disconnects
+                        // WIP : manage when client connection is lost
+                        // Manage user's disconnection
                         if (receivedData.trim().equalsIgnoreCase(("exit console"))) {
                             System.out.println("User at " + clientSocket.getInetAddress() + " left the chat\n");
                             System.out.println("Waiting for new connection...\n");
                             break;
                         }
 
-                        // Add condition to close the TCP server
+                        // Manage TCP server closure commanded by client
                         if (receivedData.trim().equalsIgnoreCase("close server")) {
                             System.out.println("Server closing...\n");
                             break;
@@ -83,10 +88,11 @@ public class TCPServer {
                         output.write(echo_buf);
                         output.flush();
                     }
+                }catch(java.net.SocketTimeoutException e){
+                    // Remind user of the connection time left
+                    long countdownSec = (startTime + timeout - System.currentTimeMillis()) / millisToSec;
+                    System.out.printf("Connection timeout in : %d sec\n",countdownSec);
                 }
-
-                // Wait for a short interval before checking again
-                sleep(interval);
             }
         }
         // Server closure
@@ -100,7 +106,7 @@ public class TCPServer {
     }
 
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException{
         if (args.length < 1){
             System.err.println("Usage: java TCPServer <listening port>");
             System.exit(1);
