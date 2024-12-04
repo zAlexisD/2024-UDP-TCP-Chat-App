@@ -61,8 +61,8 @@ public class UDPClient {
 
             // CTRL+D corresponds to en end-of-input (EOF), console.readLine() returns null
             if (userInput==null){
-                System.out.println("\nClosing console...\n");
-                break;
+                // Tell to server to do the same as with "exit console"
+                userInput = "exit console";
             }
 
             // encodes strings in UTF-8
@@ -72,13 +72,13 @@ public class UDPClient {
             DatagramPacket packet = new DatagramPacket(data, data.length, serverInetAddress, serverPort);
             datagramSocket.send(packet);
 
-            // Add condition to display help command
+            // Handle help command display
             if (userInput.trim().equalsIgnoreCase("?")){
-                System.out.println("CTRL + D or type 'exit console' to quit console\n" );
-                System.out.println("'close server' to disconnect the server\n");
+                System.out.println("\n>> CTRL + D or type 'exit console' to quit console\n" );
+                System.out.println(">> 'close server' to disconnect the server\n");
             }
-            // Add another condition to close the console
-            if (userInput.trim().equalsIgnoreCase("exit console")){
+            // Handle console and server closure
+            if (userInput.trim().equalsIgnoreCase("exit Console") || userInput.trim().equalsIgnoreCase("close server")){
                 System.out.println("Closing console...\n");
                 break;
             }

@@ -23,6 +23,7 @@ public class UDPServer {
     private String serverState;
     private final int defaultPort = 0;
     private final int maxBufSize = 1024;
+    private final int getDataOffset = 0;
 
     /**
      * Constructor that initializes the server with a specific listening port.
@@ -82,7 +83,7 @@ public class UDPServer {
                 int clientPort = packet.getPort();
 
                 // Decode received data to UTF-8 string
-                String receivedData = new String(packet.getData(),0, packet.getLength(), StandardCharsets.UTF_8);
+                String receivedData = new String(packet.getData(),getDataOffset, packet.getLength(), StandardCharsets.UTF_8);
 
                 // Display client address, port, and message content
                 System.out.println("User in " + clientAddress + " says on port " + clientPort + ": " + receivedData + "\n");
@@ -98,6 +99,7 @@ public class UDPServer {
                 }
                 // Manage UDP server closure
                 if (receivedData.trim().equalsIgnoreCase("close server")){
+                    System.out.println("User at " + clientAddress + " requested server shutdown.");
                     System.out.println("Server closing...\n");
                     break;
                 }
@@ -130,16 +132,16 @@ public class UDPServer {
         // Parses command-line args
         if (args.length < 1){
             System.err.println("Usage: java UDPServer <listening port>");
-            System.exit(1);
+            System.exit(1); // shutdown
         }
 
         // Get port number from args and convert it in integer
         int port = Integer.parseInt(args[0]);
 
-        // Create and launch a server instance
+        // Instance of UDP server
         UDPServer servUDP = new UDPServer(port);
         servUDP.launch();
-        System.out.println(servUDP);
+        System.exit(1);     // shutdown
     }
 
 }
