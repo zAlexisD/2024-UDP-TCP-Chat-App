@@ -1,3 +1,16 @@
+/**
+ * A TCP client that connects to a server, sends messages, and receives echoes.
+ * The client supports interactive console input and handles specific commands to control the connection.
+ *
+ * <p>Usage: `java TCPClient <address> <port>`</p>
+ *
+ * <p>Supported commands:</p>
+ * <ul>
+ *     <li>`?` - Displays help information.</li>
+ *     <li>`exit console` - Closes the client console and disconnects from the server.</li>
+ *     <li>`close server` - Requests the server to shut down.</li>
+ * </ul>
+ */
 import java.io.Console;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,11 +23,29 @@ public class TCPClient {
     private final int maxBufSize = 1024;
     private final String exitConsole = "exit console";
 
+    /**
+     * Creates a TCPClient instance with the specified server host and port.
+     *
+     * @param serverHost the server's host address.
+     * @param serverPort the server's port number.
+     */
     public TCPClient(String serverHost, int serverPort) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
     }
 
+    /**
+     * Connects to the server, sends user input, and receives echoes from the server.
+     *
+     * <p>Special commands:</p>
+     * <ul>
+     *     <li>`?` - Displays help information.</li>
+     *     <li>`exit console` - Closes the client console and disconnects from the server.</li>
+     *     <li>`close server` - Requests the server to shut down.</li>
+     * </ul>
+     *
+     * @throws Exception if there is an error in the socket connection or communication.
+     */
     public void send() throws Exception {
         Socket socket = new Socket(this.serverHost,this.serverPort);
         Console console = System.console(); // get a console
@@ -75,6 +106,14 @@ public class TCPClient {
         System.out.println("Console closed\n");
     }
 
+    /**
+     * Main method to start the TCP client.
+     *
+     * <p>Usage: `java TCPClient <address> <port>`</p>
+     *
+     * @param args command-line arguments containing the server address and port number.
+     * @throws Exception if there is an error initializing or running the client.
+     */
     public static void main(String[] args) throws Exception {
         if (args.length < 2) { // check the arguments
             System.err.println("Usage: java TCPClient <address> <port>");

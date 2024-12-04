@@ -1,3 +1,17 @@
+/**
+ * A simple UDP client that sends messages to a UDP server.
+ * The client uses a console interface for user input and sends
+ * messages to the server via UDP.
+ *
+ * <p>Usage: `java UDPClient <address> <port>`</p>
+ *
+ * <p>Supported commands:</p>
+ * <ul>
+ *     <li>`?` - Displays help information.</li>
+ *     <li>`exit console` - Closes the client console.</li>
+ *     <li>`CTRL + D` - Ends input and exits the program.</li>
+ * </ul>
+ */
 import java.io.Console;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,12 +22,30 @@ public class UDPClient {
     private String serverHost;
     private int serverPort;
 
-    //constructor
+    /**
+     * Constructor for the UDPClient class.
+     *
+     * @param host the hostname or IP address of the server.
+     * @param port the port number of the server.
+     */
     public UDPClient(String host, int port) {
         this.serverHost = host;
         this.serverPort = port;
     }
 
+    /**
+     * Starts the client, reads user input from the console,
+     * and sends it to the UDP server.
+     *
+     * <p>Special commands:</p>
+     * <ul>
+     *     <li>`?` - Displays help information.</li>
+     *     <li>`exit console` - Closes the client console.</li>
+     *     <li>`CTRL + D` - Ends input and exits the program.</li>
+     * </ul>
+     *
+     * @throws Exception if a network error occurs or if the console is unavailable.
+     */
     public void send() throws Exception {
         DatagramSocket datagramSocket = new DatagramSocket(); //open a socket
         InetAddress serverInetAddress = InetAddress.getByName(this.serverHost); // get the ip address of a server knowing his name
@@ -54,6 +86,15 @@ public class UDPClient {
         datagramSocket.close();
         System.out.println("Console closed\n");
     }
+
+    /**
+     * The main method to start the UDP client.
+     *
+     * <p>Usage: `java UDPClient <address> <port>`</p>
+     *
+     * @param args command-line arguments: the server address and port number.
+     * @throws Exception if there is an error starting the client.
+     */
     public static void main(String[] args) throws Exception {
         if (args.length < 2) { // check the arguments
             System.err.println("Usage: java UDPClient <address> <port>");

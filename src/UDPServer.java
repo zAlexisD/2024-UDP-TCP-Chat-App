@@ -1,3 +1,17 @@
+/**
+ * A simple UDP server that listens for incoming datagrams and processes them.
+ * The server allows clients to send messages and supports special commands for closing the console or the server.
+ *
+ * <p>Usage: `java UDPServer <listening port>`</p>
+ *
+ * <p>Supported commands from clients:</p>
+ * <ul>
+ *     <li>`?` - Displays a help message in the server logs.</li>
+ *     <li>`exit console` - Logs that a client has left the chat.</li>
+ *     <li>`close server` - Shuts down the server.</li>
+ * </ul>
+ */
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -10,23 +24,45 @@ public class UDPServer {
     private final int defaultPort = 0;
     private final int maxBufSize = 1024;
 
-    // Constructor that sets a specific listening port
+    /**
+     * Constructor that initializes the server with a specific listening port.
+     *
+     * @param listeningPort the port number on which the server will listen.
+     */
     public UDPServer(int listeningPort) {
         this.listeningPort = listeningPort;
         this.serverState = "Closed";
     }
 
-    // Default constructor, initializes server with default port
+    /**
+     * Default constructor that initializes the server with a default port.
+     */
     public UDPServer() {
         this.listeningPort = defaultPort;
         this.serverState = "Closed";
     }
 
+    /**
+     * Returns the port number on which the server is listening.
+     *
+     * @return the listening port number.
+     */
     public int getListeningPort() {
         return listeningPort;
     }
 
-    // Starts the server, listens for incoming datagrams, and processes received data
+    /**
+     * Launches the server, listens for incoming datagrams, and processes them.
+     *
+     * <p>Special client commands:</p>
+     * <ul>
+     *     <li>`?` - Displays a help message in the server logs.</li>
+     *     <li>`exit console` - Logs that a client has left the chat.</li>
+     *     <li>`close server` - Shuts down the server.</li>
+     * </ul>
+     *
+     * @throws IOException if there is a network or socket error.
+     */
     public void launch() throws IOException {
 
         try (DatagramSocket datagramSocket = new DatagramSocket(this.listeningPort)){        // Bind socket to specified port
@@ -72,13 +108,24 @@ public class UDPServer {
         System.out.println("Server closed\n");
     }
 
-    // Returns a string describing the current server status
+    /**
+     * Returns a string representation of the server's current state and listening port.
+     *
+     * @return a string describing the server's status.
+     */
     @Override
     public String toString() {
         return "UDP server status on port " + this.listeningPort + ": " + this.serverState;
     }
 
-    // Main method
+    /**
+     * Main method to start the UDP server.
+     *
+     * <p>Usage: `java UDPServer <listening port>`</p>
+     *
+     * @param args command-line arguments containing the listening port.
+     * @throws IOException if there is an error launching the server.
+     */
     public static void main(String[] args) throws IOException {
         // Parses command-line args
         if (args.length < 1){
