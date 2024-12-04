@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -7,73 +8,53 @@ import static java.lang.Thread.sleep;
 
 public class ConnectionThread extends Thread {
     private final Socket clientSocket;
+    private final InputStream clientInput;
+    private final OutputStream clientOutput;
     private final int maxBufSize = 1024;
-    
-    private final long timeout; 
-    private final int interval; 
-    private final long startTime; 
 
-    public ConnectionThread(Socket clientSocket, long timeout, int interval) {
+    // Set echo message
+    String echo = "Message received\n";
+    byte[] echo_buf = echo.getBytes(StandardCharsets.UTF_8);
+
+    public ConnectionThread(Socket clientSocket,InputStream clientInput,OutputStream clientOutput) {
         this.clientSocket = clientSocket;
-        this.timeout = timeout;
-        this.interval = interval;
-        this.startTime = System.currentTimeMillis();
+        this.clientInput = clientInput;
+        this.clientOutput = clientOutput;
     }
 
+    // WIP : for now returns err : Socket closed
     @Override
     public void run() {
-        System.out.println("Handling client: " + clientSocket.getInetAddress());
-        try (InputStream input = clientSocket.getInputStream();
-             OutputStream output = clientSocket.getOutputStream()) {
-
-            byte[] buffer = new byte[maxBufSize];
-            String echo = "Message received";
-            byte[] echoBuffer = echo.getBytes(StandardCharsets.UTF_8);
-
+        try {
             while (true) {
-                // Check for timeout
-                if (System.currentTimeMillis() - startTime > timeout) {
-                    System.out.println("Timeout reached for client: " + clientSocket.getInetAddress());
-                    break;
-                }
+                // WIP : manage ? and not displaying when client use a command
+                // Get the Client's message
+                byte[] buf = new byte[maxBufSize];
+                int bytesRead = clientInput.read(buf);
+                String receivedData = new String(buf, StandardCharsets.UTF_8);
+                System.out.println("Client " + clientSocket.getInetAddress() + " says : " + receivedData);
 
-                // Read message from client
-                int bytesRead = input.read(buffer);
-                if (bytesRead == -1) {
-                    System.out.println("Client disconnected: " + clientSocket.getInetAddress());
-                    break;
-                }
-
-                String receivedData = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
-                System.out.println("Client " + clientSocket.getInetAddress() + " says: " + receivedData);
-
-                // Handle commands
+                // WIP : manage when client connection is lost
+                // Manage user's disconnection
                 if (receivedData.trim().equalsIgnoreCase("exit console")) {
-                    System.out.println("Client " + clientSocket.getInetAddress() + " left the chat.");
+                    System.out.println("Client " + clientSocket.getInetAddress() + " left the chat.\n");
                     break;
                 }
 
+                // Manage TCP server closure commanded by client
                 if (receivedData.trim().equalsIgnoreCase("close server")) {
                     System.out.println("Client " + clientSocket.getInetAddress() + " requested server shutdown.");
-                    System.exit(0); // Shut down the server
+                    System.out.println("Server closing...\n");
+                    break;
                 }
 
-                // Send echo response
-                output.write(echoBuffer);
-                output.flush();
-
-                // Wait for the interval before the next read
-                sleep(interval);
+                // Send an echo to the client
+                clientOutput.write(echo_buf);
+                clientOutput.flush();
+                // WIP: handle when no response
             }
-        } catch (Exception e) {
-            System.err.println("Error handling client: " + e.getMessage());
-        } finally {
-            try {
-                clientSocket.close();
-            } catch (Exception e) {
-                System.err.println("Error closing client socket: " + e.getMessage());
-            }
-            System.out.println("Connection closed for client: " + clientSocket.getInetAddress());
+        } catch (IOException e){
+            System.err.println("Error in the client connection: "+e.getMessage());
         }
     }
 }
