@@ -10,11 +10,15 @@ public class TCPMultiServer {
     private String serverState;
     private final int defaultPort = 0;
 
+    // Track the number of active connection on the server
+    private int activeConnections = 0;
+    private final int noActiveConnections = 0;
+
     // Set time variables
     private final int millisToSec = 1000;
     private final int timeout = 60000;  // Set connection time out at 1 min (60000 ms)
     private final int interval = 10000;  // Set remind interval at 10s (10000 ms)
-    private final long startTime = System.currentTimeMillis();
+    private long lastActivityTime = System.currentTimeMillis();   // Set the last activity time as start time
 
     public TCPMultiServer(int listeningPort) {
         this.listeningPort = listeningPort;
@@ -42,10 +46,8 @@ public class TCPMultiServer {
             serverSocket.setSoTimeout(interval);
 
             while(true){
-                // WIP : Manage reset timeout when a client disconnects
-                // WIP : if a first client connects, stop the countdown
-                // Close server if time out connection reached
-                if (System.currentTimeMillis() - startTime > timeout){
+                // Close server if time out connection reached and no active connection
+                if (activeConnections == noActiveConnections && System.currentTimeMillis() - lastActivityTime > timeout){
                     System.out.println("Timeout reached. No connection received");
                     break;
                 }
@@ -54,18 +56,33 @@ public class TCPMultiServer {
                 try {
                     // Accept a client's connection
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("Connection from client : " + clientSocket.getInetAddress());
+                    String clientID = clientSocket.getInetAddress()+":"+clientSocket.getPort();
+                    System.out.println("\nConnection from client : " + clientID +"\n");
 
-                    // New "session" for the client
+                    // Increment active connections
+                    activeConnections++;
+
+                    // New session for the client
                     InputStream clientInput = clientSocket.getInputStream();
                     OutputStream clientOutput = clientSocket.getOutputStream();
-                    ConnectionThread client = new ConnectionThread(clientSocket,clientInput,clientOutput);
+
+                    // Pass a callback to decrement `activeConnections` when the thread ends
+                    ConnectionThread client = new ConnectionThread(clientSocket, clientInput, clientOutput, () -> {
+                        activeConnections--;
+                        System.out.println("Client "+clientID+" disconnected. Active connections: " + activeConnections);
+                        // Reset the last activity time to reset countdown
+                        lastActivityTime = System.currentTimeMillis();
+                    });
                     client.start();
 
-                }catch(java.net.SocketTimeoutException e){
-                    // Remind user of the connection time left
-                    long countdownSec = (startTime + timeout - System.currentTimeMillis()) / millisToSec;
-                    System.out.printf("Connection timeout in : %d sec\n",countdownSec);
+                }catch(java.net.SocketTimeoutException e) {
+                    // Remind user of the connection time left if no clients are connected
+                    if (activeConnections == noActiveConnections) {
+                        long countdownSec = (lastActivityTime + timeout - System.currentTimeMillis()) / millisToSec;
+                        // Avoid "Connection timeout in : -4 sec"
+                        if (countdownSec < 0){ countdownSec = 0;}
+                        System.out.printf("Connection timeout in: %d sec\n", countdownSec);
+                    }
                 }
             }
         }
@@ -82,7 +99,7 @@ public class TCPMultiServer {
     public static void main(String[] args) throws IOException {
         if (args.length < 1){
             System.err.println("Usage: java TCPMultiServer <listening port>");
-            System.exit(1);
+            System.exit(1); // shutdown
         }
 
         int port = Integer.parseInt(args[0]);
@@ -90,6 +107,6 @@ public class TCPMultiServer {
         // Instance of TCP multiserver
         TCPMultiServer servTCP = new TCPMultiServer(port);
         servTCP.launch();
-        System.exit(1);     // quit the Java VM
+        System.exit(1);     // shutdown
     }
 }
