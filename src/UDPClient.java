@@ -8,8 +8,8 @@
  * <p>Supported commands:</p>
  * <ul>
  *     <li>`?` - Displays help information.</li>
- *     <li>`exit console` - Closes the client console.</li>
- *     <li>`CTRL + D` - Ends input and exits the program.</li>
+ *     <li>`CTRL + D` or `exit console` - Closes the client console.</li>
+ *     <li>`close server` - Ends input and exits the program.</li>
  * </ul>
  */
 import java.io.Console;
@@ -22,8 +22,12 @@ public class UDPClient {
     private String serverHost;
     private int serverPort;
 
+    // Constants
+    private static final int systemShutdown = 1;
+    private boolean clientConnected = true;
+
     /**
-     * Constructor for the UDPClient class.
+     * Constructs a UDP client to connect to a specified server.
      *
      * @param host the hostname or IP address of the server.
      * @param port the port number of the server.
@@ -40,32 +44,38 @@ public class UDPClient {
      * <p>Special commands:</p>
      * <ul>
      *     <li>`?` - Displays help information.</li>
-     *     <li>`exit console` - Closes the client console.</li>
-     *     <li>`CTRL + D` - Ends input and exits the program.</li>
+     *     <li>`CTRL + D` or `exit console` - Closes the client console.</li>
+     *     <li>`close server` - Ends input and exits the program.</li>
      * </ul>
      *
      * @throws Exception if a network error occurs or if the console is unavailable.
      */
     public void send() throws Exception {
-        DatagramSocket datagramSocket = new DatagramSocket(); //open a socket
-        InetAddress serverInetAddress = InetAddress.getByName(this.serverHost); // get the ip address of a server knowing his name
-        Console console = System.console(); // get a console
+        // Open a socket for sending datagrams
+        DatagramSocket datagramSocket = new DatagramSocket();
+        InetAddress serverInetAddress = InetAddress.getByName(this.serverHost);
 
+        // Get a console
+        Console console = System.console();
+
+        // Check if console is available
         if (console == null) { 
             System.err.println("No console available.");
-            System.exit(1);
+            System.exit(systemShutdown);
         }
 
-        while (true) {
-            String userInput = console.readLine("Enter a message or '?' for help : "); // retrieve the user's message
+        // Client's session loop
+        while (clientConnected) {
+            // Prompt user for input
+            String userInput = console.readLine("Enter a message or '?' for help : ");
 
             // CTRL+D corresponds to en end-of-input (EOF), console.readLine() returns null
             if (userInput==null){
-                // Tell to server to do the same as with "exit console"
+                // Treat CTRL+D as "exit console"
                 userInput = "exit console";
             }
 
-            // encodes strings in UTF-8
+            // Encodes strings in UTF-8
             byte[] data = userInput.getBytes(StandardCharsets.UTF_8);
 
             // Send datagram to the server
@@ -80,9 +90,10 @@ public class UDPClient {
             // Handle console and server closure
             if (userInput.trim().equalsIgnoreCase("exit Console") || userInput.trim().equalsIgnoreCase("close server")){
                 System.out.println("Closing console...\n");
-                break;
+                clientConnected = false;
             }
         }
+        // Close the socket and print closing message
         datagramSocket.close();
         System.out.println("Console closed\n");
     }
@@ -96,14 +107,17 @@ public class UDPClient {
      * @throws Exception if there is an error starting the client.
      */
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) { // check the arguments
+        // Parses command-line args
+        if (args.length < 2) {
             System.err.println("Usage: java UDPClient <address> <port>");
-            System.exit(1);
+            System.exit(systemShutdown);
         }
 
+        // Get host and port number from args + convert port in integer
         String host = args[0];
         int port = Integer.parseInt(args[1]);
 
+        // Instance of UDP Client
         UDPClient clientUDP = new UDPClient(host, port);
         clientUDP.send();
     }
